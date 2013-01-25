@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+<?php
+print('<BR>');
+/*
+$a = snmp_get("192.168.1.4", "TestCommunity", "sysName.0");
+print_r($a);
+*/
+$host= '192.168.1.4';// ip адрес опрашиваемого узла
+$group = 'TestCommunity';//группа чтения для агента
+function disk_parsedata($size,$count) {
+  $host= '192.168.1.4';// ip адрес опрашиваемого узла
+	$group = 'TestCommunity';//группа чтения для агента
+	$dsize=str_replace('INTEGER:','',$size);
+	$hdd['alloc'] = snmpwalk($host, $group, '.1.3.6.1.2.1.25.2.3.1.4');// размер блока.
+	$hdd['alloc'][0] = str_replace('INTEGER:','',$hdd['alloc'][0]);
+	$dsize=$dsize*$hdd['alloc'][0];
+	$dsize=round($dsize/1024/1024/1024,$count);
+	return $dsize;
+}
+
+function get_procload() {
+	$host= '192.168.1.4';// ip адрес опрашиваемого узла
+	$group = 'TestCommunity';//группа чтения для агента
+    	$cpu = snmpwalk($host, $group, '.1.3.6.1.2.1.25.3.3.1.2');
+    	foreach($cpu as $key=>$val) {
+		$val=str_replace('INTEGER:','',$val);
+		$strcpu .= 'ЦП'.$key.' '.$val.'% <br>';
+	}
+    return $strcpu;
+}
+
+function get_totalmem() {
+	$host= '192.168.1.4';// ip адрес опрашиваемого узла
+	$group = 'TestCommunity';//группа чтения для агента
+	$totalmem=snmpget($host, $group, '.1.3.6.1.2.1.25.2.2.0');
+	$totalmem=str_replace('INTEGER:','',$totalmem);
+	$totalmem=round($totalmem/1024/1024);
+	$totalmem='Размер ОЗУ: '.$totalmem.' Gb<br><br>';
+	return $totalmem;
+}
+
+function get_usagemem() {
+	$host= '192.168.1.4';// ip адрес опрашиваемого узла
+	$group = 'TestCommunity';//группа чтения для агента
+	$usagemem=snmpwalk($host, $group, '.1.3.6.1.2.1.25.5.1.1.2');
+	//print_r($usagemem);
+	foreach($usagemem as $key=>$val) {
+		$val=str_replace('INTEGER:','',$val);
+		$summ=$summ+$val;
+	}
+//	$summ=$summ;
+	return $summ;
+}
+
+    echo 'Время аптайма: '.str_replace('','',snmpget($host, $group, '.1.3.6.1.2.1.25.1.1.0')).'<br>'; // Определяем доступные устройства хранения их размер и использоемое пространство
+    $hdd['names'] = snmpwalk($host, $group, '.1.3.6.1.2.1.25.2.3.1.3');// Имя типа устройства хранения
+    $hdd['used'] = snmpwalk($host, $group, '.1.3.6.1.2.1.25.2.3.1.6');// размер используемого места
+    $hdd['total'] = snmpwalk($host, $group, '.1.3.6.1.2.1.25.2.3.1.5');// размер раздела
+    $complete.='Локальный диск: <br>'.$hdd['names'][0].'<br>';
+    $complete.='Занято: '.disk_parsedata($hdd['used'][0],2).' Gb<br>';
+    $complete.='Всего: '.disk_parsedata($hdd['total'][0],2).' Gb<br>';
+    $complete=str_replace('INTEGER:','',$complete);
+    $complete=str_replace('STRING:','',$complete);
+    echo $complete;
+    echo get_totalmem();
+    echo 'Загрузка ЦП:<br><br>'.get_procload();
+    echo get_usagemem();
+   /* echo 'System storages:';
+    $countstorage = count($hdd['names']);
+    for( $i = 0; $i < $countstorage; $i ++)
+    {
+    echo $hdd['names'][$i]' Size (bytes):';/* ($hdd['total'][$i]*$hdd['alloc'][$i]). ' Used '. ($hdd['used'][$i]*$hdd['alloc'][$i]);
+    }
+*/
+    // Количество и загруженность процессоров
+
+?>
+
+</body>
+</html>
